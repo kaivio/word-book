@@ -31,9 +31,16 @@ def main():
     opts,args = parser.parse_known_args()
     k = opts.key
     if opts.j:
-        show_gojyuonzu(opts.j)
+        if opts.key:
+            rom(' '.join([opts.key,*args]))
+        else:
+            show_gojyuonzu(opts.j)
         return
 
+
+    if not k:
+        parser.print_help()
+        return
     con = connect()
     cur = con.cursor()
     if opts.tool:
@@ -131,6 +138,101 @@ def show_gojyuonzu(n):
             print(l1)
             print(l2)
         n -= 1
+
+
+def rom(text):
+    hs = []
+    ks = []
+    ys = []
+    os = []
+    for i in gojyuonzu.split('\n'):
+        try:
+            h,k,y,o = i.split()
+        except:
+            continue
+        if h == '.':
+            continue
+        hs.append(h)
+        ks.append(k)
+        ys.append(y)
+        if o == '.':
+            os.append(y)
+
+    if is_rom(text[0]):
+        out = []
+        t = hs or ks
+        for yu in text.split():
+            if not is_rom(yu):
+                out.append(yu)
+                continue
+            try:
+                i = ys.index(yu)
+            except:
+                try:
+                    i = os.index(yu)
+                except:
+                    out.append(yu)
+                    continue
+
+            out.append(t[i])
+        out = ''.join(out)
+        print(out)
+        return out
+
+    t = ys
+    res = []
+    for ch in text:
+        brute = Brute()
+        brute(hs.index, ch)
+        brute(ks.index, ch)
+        if brute.ok:
+             yu = t[brute.val]
+             res.append(yu)
+        else:
+            res.append(ch)
+
+    res = ' '.join(res)
+    print(res)
+    return res
+
+
+
+class Brute():
+    ''' 执行->发生异常->继续
+            ->没有异常->终止
+
+    >>> a = [3,5,6]
+    >>> brute = Brute()
+    >>> brute(a.index, 4)
+    >>> brute(a.index, 5)
+    >>> brute(a.index, 6)
+    >>> brute.val == 1
+    '''
+    def __init__(self):
+        self.val = None
+        self.ok = False
+
+    def __call__(self,func,*args,**kwargs):
+        if self.ok:
+            return self.val
+        try:
+            self.val = func(*args,**kwargs)
+            self.ok = True
+            return self.val
+        except:
+            pass
+
+    def reset(self):
+        self.__init__()
+
+
+
+
+
+def is_rom(ch):
+    ch = ch[:1]
+    o = ord(ch) >= ord('a') and ord(ch) <= ord('z')
+    return o
 
 gojyuonzu = '''
 あ ア a .
